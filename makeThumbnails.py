@@ -2,7 +2,6 @@ from PIL import Image
 from util import listdir
 import argparse
 import os
-import time
 
 def transform(filePath, target):
     filename = os.path.basename(filePath)
@@ -17,7 +16,6 @@ def transform(filePath, target):
     image = image.crop((left, top, right, bottom))
     new_image = image.resize((400, 400))
     new_image.save( os.path.join(target,filename))
-    #image.save(filename + ".jpeg", format("jpeg"))
 
 
 parser = argparse.ArgumentParser()
