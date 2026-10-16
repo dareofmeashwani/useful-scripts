@@ -39,8 +39,8 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 RUN chown -R appuser:appuser /app
 USER appuser
 
-EXPOSE 9000
+EXPOSE 80
 
 # Run from backend/ so uvicorn can import main.py as "main"
 WORKDIR /app/backend
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
