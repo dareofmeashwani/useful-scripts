@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>UTools — Local Browser Toolbox</title>
+    <meta name="description" content="A free, privacy-first toolbox that runs entirely in your browser. PDF split, merge, unlock, image convert, resize, crop, Base64, UUID, JWT decoder, text diff, JSON/YAML viewer and more — no uploads, no tracking." />
+    <meta name="keywords" content="PDF split, PDF merge, PDF unlock, PDF to images, image converter, image resize, image crop, image thumbnail, ICO generator, Base64 encoder, UUID generator, JWT decoder, text diff, JSON viewer, YAML viewer, XML viewer, dependency graph, online tools, browser tools, offline tools, privacy tools" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph (social sharing + Google rich preview) -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:title"       content="UTools — Local Browser Toolbox" />
+    <meta property="og:description" content="PDF, image, text, and developer tools running entirely in your browser. Free, private, no sign-up." />
+    <meta property="og:image"       content="/favicon.svg" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card"        content="summary" />
+    <meta name="twitter:title"       content="UTools — Local Browser Toolbox" />
+    <meta name="twitter:description" content="PDF, image, text, and developer tools — all local, all private." />
+
+    <script>
+      // Set theme before first paint to avoid a flash of the wrong theme.
+      (function () {
+        try {
+          document.documentElement.dataset.theme =
+            localStorage.getItem('utools-theme') || 'light'
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light'
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

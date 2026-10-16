@@ -1,0 +1,401 @@
+/* ── Paint Tool ──────────────────────────────────────────────────────────── */
+
+/* Escape tool-page padding so paint fills the viewport */
+.paint-wrap {
+  margin: -28px -32px -60px;
+  height: calc(100svh - 0px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.paint-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12px;
+  user-select: none;
+  overflow: hidden;
+  color: var(--text);
+}
+
+/* ── Menu bar ────────────────────────────────────────────────────────────── */
+.paint-menu {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 4px 8px;
+  gap: 0;
+}
+
+.paint-brand { padding: 2px 8px; font-size: 16px; }
+
+.pm-item {
+  position: relative;
+  padding: 3px 10px;
+  cursor: default;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+.pm-item:hover { background: var(--hover); }
+.pm-item--open  { background: var(--accent-soft); color: var(--accent-hl); }
+
+.pm-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  z-index: 500;
+  min-width: 180px;
+  padding: 4px;
+  overflow: hidden;
+}
+
+.pm-di {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 6px 12px;
+  cursor: default;
+  white-space: nowrap;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+.pm-di:hover { background: var(--hover); }
+.pm-di--disabled { color: var(--muted); pointer-events: none; }
+.pm-shortcut { font-size: 0.72rem; color: var(--muted); }
+
+.pm-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+.paint-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ── Toolbox ─────────────────────────────────────────────────────────────── */
+.paint-toolbox {
+  flex-shrink: 0;
+  width: 58px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 8px 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.pt-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+
+.pt-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  padding: 0;
+  color: var(--text);
+  transition: background 0.12s, border-color 0.12s;
+}
+.pt-btn:hover { background: var(--hover); border-color: var(--border); }
+.pt-btn--active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-hl);
+}
+
+.pt-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+/* Tool options */
+.pt-opts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 0;
+}
+.pt-opts--text {
+  padding: 4px 2px;
+  gap: 4px;
+}
+
+.pt-size-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 16px;
+  cursor: default;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.pt-size-opt:hover { background: var(--hover); }
+.pt-size-opt--active { background: var(--accent-soft); border-color: var(--accent); }
+
+.pt-fill-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 22px;
+  cursor: default;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.pt-fill-opt:hover { background: var(--hover); }
+.pt-fill-opt--active { background: var(--accent-soft); border-color: var(--accent); }
+
+.pt-zoom-btn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 4px;
+  cursor: default;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  width: 46px;
+  text-align: center;
+  color: var(--text);
+}
+.pt-zoom-btn:hover { background: var(--hover); }
+.pt-zoom-btn--active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-hl); }
+
+.pt-select {
+  width: 100%;
+  font-size: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.pt-num {
+  width: 40px;
+  font-size: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+.pt-style-btn {
+  width: 24px;
+  height: 22px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.pt-style-btn:hover { background: var(--hover); }
+.pt-style-btn--on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-hl);
+}
+
+/* ── Canvas area ─────────────────────────────────────────────────────────── */
+.paint-canvas-area {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  background: var(--surface-2);
+  padding: 16px;
+  position: relative;
+}
+
+.pt-canvas-wrap {
+  position: relative;
+  display: inline-block;
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+}
+
+.pt-canvas-main {
+  display: block;
+  image-rendering: pixelated;
+  border-radius: 4px;
+}
+
+.pt-canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  image-rendering: pixelated;
+  border-radius: 4px;
+}
+
+.pt-text-input {
+  position: absolute;
+  background: transparent;
+  border: 1px dashed var(--accent);
+  outline: none;
+  resize: both;
+  overflow: hidden;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 1px;
+  z-index: 10;
+  line-height: 1.2;
+  border-radius: 2px;
+}
+
+/* ── Color bar ───────────────────────────────────────────────────────────── */
+.paint-colorbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 5px 10px;
+  gap: 10px;
+  min-height: 38px;
+}
+
+.pt-active-colors {
+  position: relative;
+  width: 36px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.pt-color-fg,
+.pt-color-bg {
+  position: absolute;
+  width: 22px;
+  height: 18px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  box-sizing: border-box;
+  border-radius: 3px;
+}
+.pt-color-fg {
+  top: 0; left: 0; z-index: 2;
+  box-shadow: var(--shadow-sm);
+}
+.pt-color-bg {
+  bottom: 0; right: 0; z-index: 1;
+}
+.pt-color-fg:hover, .pt-color-bg:hover { border-color: var(--accent); }
+
+.pt-palette {
+  display: grid;
+  grid-template-columns: repeat(14, 17px);
+  grid-template-rows: repeat(2, 17px);
+  gap: 2px;
+}
+
+.pt-swatch {
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--border);
+  cursor: default;
+  box-sizing: border-box;
+  border-radius: 3px;
+  transition: transform 0.1s, border-color 0.1s;
+}
+.pt-swatch:hover {
+  border-color: var(--accent);
+  transform: scale(1.18);
+  z-index: 2;
+  position: relative;
+}
+
+/* ── Status bar ──────────────────────────────────────────────────────────── */
+.paint-statusbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  min-height: 26px;
+}
+
+.pt-status-seg {
+  padding: 3px 12px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.pt-status-seg:last-child { border-right: none; }
+
+.pt-status-zoom {
+  padding: 2px 6px;
+  gap: 4px;
+}
+
+.pt-zoom-step-btn {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+.pt-zoom-step-btn:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--accent);
+  color: var(--accent-hl);
+}
+.pt-zoom-step-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.pt-zoom-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 36px;
+  text-align: center;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .paint-wrap { margin: -20px -16px -48px; }
+}

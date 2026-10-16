@@ -1,0 +1,25 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/dist/
+backend/build/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Git & OS
+.git/
+.gitignore
+.DS_Store
+**/.DS_Store
+
+# Dev/build tooling (not needed in image)
+Makefile
+build.sh
+backend/UTools.spec
+*.md

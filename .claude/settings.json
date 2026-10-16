@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create vite@latest frontend -- --template react)",
+      "Bash(npm install react-router-dom)",
+      "Bash(npm install js-yaml)",
+      "Bash(npm run build)",
+      "Bash(chmod +x /Users/I349391/Desktop/projects/UTools/build.sh)"
+    ]
+  }
+}
