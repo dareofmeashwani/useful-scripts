@@ -45,6 +45,9 @@ TOOLS = [
     {"id": "uuid-generate",   "name": "UUID Generator",     "description": "Generate one or more random UUIDs (v4)",               "icon": "🎲", "categories": ["Guid", "UUID"]},
     {"id": "dep-graph",       "name": "Dependency Graph",   "description": "Visualize a dependency file from any language as a directed graph", "icon": "🕸️", "categories": ["Graph", "Dependencies"]},
 
+    # ── Email ────────────────────────────────────────────────────────────────
+    {"id": "email-to-pdf",    "name": "Email to PDF",       "description": "Convert an exported .eml email to a complete, paginated PDF",                         "icon": "📧", "categories": ["Email", "PDF"]},
+
     # ── Fun ──────────────────────────────────────────────────────────────────
     {"id": "paint",           "name": "Paint",              "description": "MS Paint-style drawing app — pencil, shapes, fill, text and more, all in the browser", "icon": "🎨", "categories": ["Fun", "Image"]},
 ]

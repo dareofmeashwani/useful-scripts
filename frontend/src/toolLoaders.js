@@ -46,6 +46,7 @@ export const TOOL_LOADERS = {
   'pdf-from-images': () => import('./tools/PdfFromImages'), // pdf-lib    419 KB
   'pdf-split':       () => import('./tools/PdfSplit'),      // pdf-lib    419 KB
   'pdf-merge':       () => import('./tools/PdfMerge'),      // pdf-lib    419 KB
+  'email-to-pdf':    () => import('./tools/EmailToPdf'),    // pdf-lib    419 KB
 }
 
 /** Warm a lazy tool chunk on link hover. No-op for eagerly bundled tools. */
