@@ -473,9 +473,9 @@ export default function EmailToPdf({ meta }) {
   const [downloadSize, setDownloadSize] = useState(null)
 
   const applyFile = f => {
-    if (!f.name.match(/\.eml$/i)) { setFileError('Only .eml files are supported'); return }
-    if (f.size === 0)               { setFileError('File is empty'); return }
-    if (f.size > 50 * 1024 * 1024) { setFileError('File too large (max 50 MB)'); return }
+    if (!f.name.match(/\.(eml|emltpl)$/i)) { setFileError('Only .eml and .emltpl files are supported'); return }
+    if (f.size === 0)                  { setFileError('File is empty'); return }
+    if (f.size > 50 * 1024 * 1024)    { setFileError('File too large (max 50 MB)'); return }
     setFile(f); setFileError(null); setDownloadUrl(null); setError(null)
   }
 
@@ -483,14 +483,13 @@ export default function EmailToPdf({ meta }) {
     e.preventDefault()
     if (!file) return
     setLoading(true); setError(null); setDownloadUrl(null)
-
     try {
       const text   = await file.text()
       const parsed = parseEml(text)
       const bytes  = await generatePdf(parsed)
       const blob   = new Blob([bytes], { type: 'application/pdf' })
       setDownloadUrl(URL.createObjectURL(blob))
-      setDownloadName(file.name.replace(/\.eml$/i, '') + '.pdf')
+      setDownloadName(file.name.replace(/\.(eml|emltpl)$/i, '') + '.pdf')
       setDownloadSize(blob.size)
     } catch (err) {
       setError(humanizeNetworkError(err) || 'Failed to convert email to PDF')
@@ -508,9 +507,9 @@ export default function EmailToPdf({ meta }) {
           file={file}
           error={!!fileError}
           onSelect={applyFile}
-          accept=".eml"
-          hint="Click or drag an .eml email file here"
-          subhint=".eml · Max 50 MB"
+          accept=".eml,.emltpl"
+          hint="Click or drag an .eml or .emltpl file here"
+          subhint=".eml · .emltpl · Max 50 MB"
         />
         {fileError && <div className="alert alert--error">{fileError}</div>}
 
