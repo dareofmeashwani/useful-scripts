@@ -21,7 +21,6 @@ import TextViewer      from './tools/TextViewer'
 import DependencyGraph from './tools/DependencyGraph'
 import Paint           from './tools/Paint'
 import PdfUnlock       from './tools/PdfUnlock'
-import CertViewer      from './tools/CertViewer'
 
 export const TOOL_COMPONENTS = {
   'base64-text':     Base64Text,
@@ -39,7 +38,6 @@ export const TOOL_COMPONENTS = {
   'dep-graph':       DependencyGraph,
   'paint':           Paint,
   'pdf-unlock':      PdfUnlock,
-  'cert-viewer':     CertViewer,
 }
 
 // Lazy — each pulls a large vendor library on first open
@@ -49,6 +47,8 @@ export const TOOL_LOADERS = {
   'pdf-split':       () => import('./tools/PdfSplit'),      // pdf-lib    419 KB
   'pdf-merge':       () => import('./tools/PdfMerge'),      // pdf-lib    419 KB
   'email-to-pdf':    () => import('./tools/EmailToPdf'),    // pdf-lib    419 KB
+  'cert-viewer':     () => import('./tools/CertViewer'),    // @peculiar/x509 ~90 KB
+  'pdf-viewer':      () => import('./tools/PdfViewer'),     // pdfjs-dist (shared chunk)
 }
 
 /** Warm a lazy tool chunk on link hover. No-op for eagerly bundled tools. */
