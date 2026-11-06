@@ -3,4 +3,5 @@ uvicorn[standard]
 pikepdf
 python-multipart
 aiofiles
+cryptography
 pyinstaller

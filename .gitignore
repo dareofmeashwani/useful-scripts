@@ -15,7 +15,6 @@ venv/
 env/
 
 # ── PyInstaller ────────────────────────────────────────────────────────────────
-*.spec
 backend/dist/
 backend/build/
 backend/_ui/

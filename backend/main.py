@@ -2,12 +2,17 @@ import io
 import json
 import sys
 import hashlib
+import datetime
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import pikepdf
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa, ed25519, ed448
+from cryptography.x509.oid import ExtensionOID, NameOID
 
 app = FastAPI()
 
@@ -41,7 +46,7 @@ TOOLS = [
     {"id": "base64-text",     "name": "Base64",             "description": "Encode or decode text using Base64",                   "icon": "🔢", "categories": ["Text", "Base64"]},
 
     # ── Developer ────────────────────────────────────────────────────────────
-    {"id": "jwt-decode",      "name": "JWT Decoder",        "description": "Inspect JWT header, payload, signature and expiry",    "icon": "🔑", "categories": ["JWT"]},
+    {"id": "jwt-decode",      "name": "JWT Decoder",        "description": "Inspect JWT header, payload, signature and expiry",    "icon": "🔑", "categories": ["JWT", "Security"]},
     {"id": "uuid-generate",   "name": "UUID Generator",     "description": "Generate one or more random UUIDs (v4)",               "icon": "🎲", "categories": ["Guid", "UUID"]},
     {"id": "dep-graph",       "name": "Dependency Graph",   "description": "Visualize a dependency file from any language as a directed graph", "icon": "🕸️", "categories": ["Graph", "Dependencies"]},
 
@@ -49,7 +54,10 @@ TOOLS = [
     {"id": "email-to-pdf",    "name": "Email to PDF",       "description": "Convert an exported .eml or .emltpl email file to a complete, paginated PDF",        "icon": "📧", "categories": ["Email", "PDF"]},
 
     # ── Fun ──────────────────────────────────────────────────────────────────
-    {"id": "paint",           "name": "Paint",              "description": "MS Paint-style drawing app — pencil, shapes, fill, text and more, all in the browser", "icon": "🎨", "categories": ["Fun", "Image"]},
+    {"id": "paint",           "name": "Paint",              "description": "MS Paint-style drawing app — pencil, shapes, fill, text and more, all in the browser", "icon": "🎨", "categories": ["Edit", "Image"]},
+
+    # ── Security ─────────────────────────────────────────────────────────────
+    {"id": "cert-viewer",     "name": "Certificate Viewer", "description": "Inspect X.509 certificate details and full chain — subject, issuer, validity, SANs, key info and fingerprints", "icon": "🔐", "categories": ["Security", "Certificate"]},
 ]
 
 MAX_PDF_BYTES = 50 * 1024 * 1024   # 50 MB
@@ -118,6 +126,196 @@ async def pdf_unlock(file: UploadFile = File(...), password: str = Form(...)):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# ── Certificate Viewer ─────────────────────────────────────────────────────────
+
+def _dn_to_dict(name: x509.Name) -> dict:
+    OID_LABELS = {
+        NameOID.COMMON_NAME:             "CN",
+        NameOID.ORGANIZATION_NAME:       "O",
+        NameOID.ORGANIZATIONAL_UNIT_NAME:"OU",
+        NameOID.COUNTRY_NAME:            "C",
+        NameOID.STATE_OR_PROVINCE_NAME:  "ST",
+        NameOID.LOCALITY_NAME:           "L",
+        NameOID.EMAIL_ADDRESS:           "emailAddress",
+    }
+    result = {}
+    for attr in name:
+        label = OID_LABELS.get(attr.oid, attr.oid.dotted_string)
+        result[label] = attr.value
+    return result
+
+
+def _pubkey_info(key) -> dict:
+    if isinstance(key, rsa.RSAPublicKey):
+        return {"algorithm": "RSA", "size": key.key_size}
+    if isinstance(key, ec.EllipticCurvePublicKey):
+        return {"algorithm": "EC", "curve": key.curve.name, "size": key.key_size}
+    if isinstance(key, dsa.DSAPublicKey):
+        return {"algorithm": "DSA", "size": key.key_size}
+    if isinstance(key, ed25519.Ed25519PublicKey):
+        return {"algorithm": "Ed25519", "size": 256}
+    if isinstance(key, ed448.Ed448PublicKey):
+        return {"algorithm": "Ed448", "size": 448}
+    return {"algorithm": "Unknown", "size": None}
+
+
+def _parse_cert(cert: x509.Certificate) -> dict:
+    now = datetime.datetime.now(datetime.timezone.utc)
+    not_after = cert.not_valid_after_utc
+    not_before = cert.not_valid_before_utc
+    days_remaining = (not_after - now).days
+
+    # Key usage
+    key_usage = []
+    try:
+        ku = cert.extensions.get_extension_for_oid(ExtensionOID.KEY_USAGE).value
+        flags = {
+            "Digital Signature": ku.digital_signature,
+            "Content Commitment": ku.content_commitment,
+            "Key Encipherment": ku.key_encipherment,
+            "Data Encipherment": ku.data_encipherment,
+            "Key Agreement": ku.key_agreement,
+            "Key Cert Sign": ku.key_cert_sign,
+            "CRL Sign": ku.crl_sign,
+        }
+        key_usage = [k for k, v in flags.items() if v]
+    except x509.ExtensionNotFound:
+        pass
+
+    # Extended key usage
+    ext_key_usage = []
+    try:
+        eku = cert.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE).value
+        EKU_LABELS = {
+            "1.3.6.1.5.5.7.3.1": "Server Authentication",
+            "1.3.6.1.5.5.7.3.2": "Client Authentication",
+            "1.3.6.1.5.5.7.3.3": "Code Signing",
+            "1.3.6.1.5.5.7.3.4": "Email Protection",
+            "1.3.6.1.5.5.7.3.8": "Timestamping",
+            "1.3.6.1.5.5.7.3.9": "OCSP Signing",
+        }
+        ext_key_usage = [EKU_LABELS.get(u.dotted_string, u.dotted_string) for u in eku]
+    except x509.ExtensionNotFound:
+        pass
+
+    # Subject Alternative Names
+    san = []
+    try:
+        san_ext = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME).value
+        for name in san_ext:
+            if isinstance(name, x509.DNSName):
+                san.append(f"DNS:{name.value}")
+            elif isinstance(name, x509.IPAddress):
+                san.append(f"IP:{name.value}")
+            elif isinstance(name, x509.RFC822Name):
+                san.append(f"email:{name.value}")
+            elif isinstance(name, x509.UniformResourceIdentifier):
+                san.append(f"URI:{name.value}")
+    except x509.ExtensionNotFound:
+        pass
+
+    # Basic constraints
+    is_ca = False
+    path_length = None
+    try:
+        bc = cert.extensions.get_extension_for_oid(ExtensionOID.BASIC_CONSTRAINTS).value
+        is_ca = bc.ca
+        path_length = bc.path_length
+    except x509.ExtensionNotFound:
+        pass
+
+    # Subject Key Identifier
+    ski = None
+    try:
+        ski_ext = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_KEY_IDENTIFIER).value
+        ski = ski_ext.key_identifier.hex(":")
+    except x509.ExtensionNotFound:
+        pass
+
+    # Authority Key Identifier
+    aki = None
+    try:
+        aki_ext = cert.extensions.get_extension_for_oid(ExtensionOID.AUTHORITY_KEY_IDENTIFIER).value
+        if aki_ext.key_identifier:
+            aki = aki_ext.key_identifier.hex(":")
+    except x509.ExtensionNotFound:
+        pass
+
+    # Fingerprints
+    der = cert.public_bytes(serialization.Encoding.DER)
+    sha1   = hashlib.sha1(der).hexdigest().upper()
+    sha256 = hashlib.sha256(der).hexdigest().upper()
+    fp_sha1   = ":".join(sha1[i:i+2]   for i in range(0, len(sha1),   2))
+    fp_sha256 = ":".join(sha256[i:i+2] for i in range(0, len(sha256), 2))
+
+    pem = cert.public_bytes(serialization.Encoding.PEM).decode("ascii")
+
+    return {
+        "subject":             _dn_to_dict(cert.subject),
+        "issuer":              _dn_to_dict(cert.issuer),
+        "serial":              format(cert.serial_number, "X"),
+        "version":             cert.version.value + 1,
+        "not_before":          not_before.isoformat(),
+        "not_after":           not_after.isoformat(),
+        "is_expired":          days_remaining < 0,
+        "days_remaining":      days_remaining,
+        "signature_algorithm": cert.signature_hash_algorithm.name if cert.signature_hash_algorithm else "unknown",
+        "public_key":          _pubkey_info(cert.public_key()),
+        "is_ca":               is_ca,
+        "path_length":         path_length,
+        "key_usage":           key_usage,
+        "ext_key_usage":       ext_key_usage,
+        "san":                 san,
+        "subject_key_id":      ski,
+        "authority_key_id":    aki,
+        "fingerprint_sha1":    fp_sha1,
+        "fingerprint_sha256":  fp_sha256,
+        "pem":                 pem,
+    }
+
+
+def _load_certs_from_bytes(data: bytes) -> list[x509.Certificate]:
+    certs = []
+    # Try PEM (may contain multiple certificates)
+    if b"-----BEGIN" in data:
+        import re
+        blocks = re.findall(
+            rb"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----",
+            data, re.DOTALL,
+        )
+        if not blocks:
+            raise HTTPException(status_code=400, detail="No CERTIFICATE blocks found in PEM data")
+        for block in blocks:
+            try:
+                certs.append(x509.load_pem_x509_certificate(block))
+            except Exception as exc:
+                raise HTTPException(status_code=400, detail=f"Failed to parse PEM block: {exc}")
+        return certs
+    # Try DER
+    try:
+        certs.append(x509.load_der_x509_certificate(data))
+        return certs
+    except Exception:
+        pass
+    raise HTTPException(status_code=400, detail="Could not parse certificate — expected PEM or DER format")
+
+
+@app.post("/tools/cert-viewer")
+async def cert_viewer(
+    file: UploadFile = File(None),
+    pem_text: str    = Form(None),
+):
+    if file and file.filename:
+        raw = await file.read()
+    elif pem_text and pem_text.strip():
+        raw = pem_text.strip().encode("utf-8")
+    else:
+        raise HTTPException(status_code=400, detail="Provide a certificate file or paste PEM text")
+
+    certs = _load_certs_from_bytes(raw)
+    return {"chain": [_parse_cert(c) for c in certs]}
 
 
 # ── Production static file serving ────────────────────────────────────────────

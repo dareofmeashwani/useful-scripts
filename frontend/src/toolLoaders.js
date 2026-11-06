@@ -21,6 +21,7 @@ import TextViewer      from './tools/TextViewer'
 import DependencyGraph from './tools/DependencyGraph'
 import Paint           from './tools/Paint'
 import PdfUnlock       from './tools/PdfUnlock'
+import CertViewer      from './tools/CertViewer'
 
 export const TOOL_COMPONENTS = {
   'base64-text':     Base64Text,
@@ -38,6 +39,7 @@ export const TOOL_COMPONENTS = {
   'dep-graph':       DependencyGraph,
   'paint':           Paint,
   'pdf-unlock':      PdfUnlock,
+  'cert-viewer':     CertViewer,
 }
 
 // Lazy — each pulls a large vendor library on first open
